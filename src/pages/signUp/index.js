@@ -1,88 +1,115 @@
-import React, { Component } from 'react';
-import './index.css';
+import React, { useState } from 'react';
 import { signUp } from '../../api/apiCalls';
+import styles from './index.style.js';
 
-class UserSignUpPage extends Component {
-  state = {
-    userName: null,
-    fullName: null,
-    password: null,
-    passwordRepeat: null,
-    pendingApiCall: false,
-  };
+function UserSignUpPage() {
+  const [apiProgress, setApiProgress] = useState(false);
+  const [successMessage, setSuccessMessage] = useState();
+  const [formData, setFormData] = useState({
+    userName: '',
+    fullName: '',
+    password: '',
+    passwordRepeat: '',
+  });
 
-  handleInputChange = (e) => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
-    this.setState({ [name]: value });
+    setFormData((prevFormData) => ({
+      ...prevFormData,
+      [name]: value,
+    }));
   };
 
-  signUp = async (e)  =>  {
+  const onSubmit = async (e) => {
     e.preventDefault();
-
-    const { userName, fullName, password } = this.state;
-
-    const body = {
-      userName,
-      fullName,
-      password,
-    };
-
-    this.setState({ pendingApiCall: true });
+    setSuccessMessage();
+    setApiProgress(true);
 
     try {
-      const response = await signUp(body);
-    } catch (error) {}
-    this.setState({ pendingApiCall: false });
+      const response = await signUp(formData);
+      setSuccessMessage(response.data.message)
+    } catch (error) { }
+    setApiProgress(false)
   };
 
-  render() {
-    const { pendingApiCall } = this.state;
+  return (
+    <div className="container"  >
+      <div className="col-lg-4 offset-lg-4 col-sm-7 offset-sm-2">
+        <form className="card" onSubmit={onSubmit} style={styles.container} >
+          <div className="text-center card-header" >
+            <h1>Sign Up</h1>
+          </div>
+          <div className="card-body">
 
-    return (
-      <div className="signUp-container">
-        <h1>Sign Up</h1>
-        <form className="signUp-form">
-          <input
-            type="text"
-            onChange={this.handleInputChange}
-            placeholder="Username"
-            name="userName"
-            className="input-field"
-          />
-          <input
-            type="text"
-            onChange={this.handleInputChange}
-            placeholder="Full Name"
-            name="fullName"
-            className="input-field"
-          />
-          <input
-            type="password"
-            onChange={this.handleInputChange}
-            placeholder="Password"
-            name="password"
-            className="input-field"
-          />
-          <input
-            type="password"
-            onChange={this.handleInputChange}
-            placeholder="Password Repeat"
-            name="passwordRepeat"
-            className="input-field"
-          />
-          <button
-            type="button"
-            className="btn submit-button"
-            onClick={this.signUp}
-            disabled={pendingApiCall}
-          >
-            {pendingApiCall ? <span className="spinner-border spinner-border-sm"></span>: ''}
-            Sign Up
-          </button>
+            <div className="mb-3">
+
+              <input
+                type="text"
+                onChange={handleInputChange}
+                placeholder="Username"
+                name="userName"
+                value={formData.userName}
+                className="form-control"
+                style={styles.inputField}
+              />
+            </div>
+            <div className="mb-3">
+              <input
+                type="text"
+                onChange={handleInputChange}
+                placeholder="Full Name"
+                name="fullName"
+                value={formData.fullName}
+                className="form-control"
+                style={styles.inputField}
+              />
+            </div>
+            <div className="mb-3">
+              <input
+                type="password"
+                onChange={handleInputChange}
+                placeholder="Password"
+                name="password"
+                value={formData.password}
+                className="form-control"
+                style={styles.inputField}
+              />
+            </div>
+            <div className="mb-3">
+              <input
+                type="password"
+                onChange={handleInputChange}
+                placeholder="Password Repeat"
+                name="passwordRepeat"
+                value={formData.passwordRepeat}
+                className="form-control"
+                style={styles.inputField}
+              />
+            </div>
+            {successMessage && (
+              <div className="alert alert-success">{successMessage}</div>
+            )}
+            <div className="text-center">
+              <button
+                type="submit"
+                className="btn submit-button"
+                style={styles.submitButton}
+                disabled={apiProgress || (!formData.password || formData.password !== formData.passwordRepeat)}>
+                {apiProgress && (
+                  <span
+                    className="spinner-border spinner-border-sm"
+                    style={{ marginRight: '3%', }}
+                    aria-hidden="true"
+                  ></span>
+                )}
+                Sign Up
+              </button>
+            </div>
+          </div>
         </form>
       </div>
-    );
-  }
+    </div>
+  );
 }
 
 export default UserSignUpPage;
