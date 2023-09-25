@@ -1,16 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { signUp } from '../../api/apiCalls';
 import styles from './index.style.js';
 
 function UserSignUpPage() {
   const [apiProgress, setApiProgress] = useState(false);
   const [successMessage, setSuccessMessage] = useState();
+  const [errors, setErrors] = useState({});
+  const [generalErrors, setGeneralErrors] = useState();
+
   const [formData, setFormData] = useState({
     userName: '',
     fullName: '',
     password: '',
     passwordRepeat: '',
   });
+
+  //bu fonksiyon formData.userName her degiştiginde caliştirilsin. null iken error var input girince hemen hata mesajı gidiyor
+  useEffect(() => {
+    setErrors({})
+  }, [formData.userName])
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -22,14 +30,22 @@ function UserSignUpPage() {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    setSuccessMessage();
-    setApiProgress(true);
+    setSuccessMessage();//submit edildigi anda mesaji sil
+    setApiProgress(true);;//submit edildigi anda progress barı kaldir
+    setGeneralErrors();;//submit edildigi anda hatayi sil
 
     try {
       const response = await signUp(formData);
       setSuccessMessage(response.data.message)
-    } catch (error) { }
-    setApiProgress(false)
+    } catch (error) {
+      if (error.response?.data && error.response.data.status === 400) {
+        setErrors(error.response.data.validationErrors);
+      }else{
+        setGeneralErrors('Unexpected error occured. Please try again');
+      }
+    } finally {
+      setApiProgress(false)
+    }
   };
 
   return (
@@ -40,18 +56,19 @@ function UserSignUpPage() {
             <h1>Sign Up</h1>
           </div>
           <div className="card-body">
-
             <div className="mb-3">
-
               <input
                 type="text"
                 onChange={handleInputChange}
                 placeholder="Username"
                 name="userName"
                 value={formData.userName}
-                className="form-control"
+                className={
+                  errors.userName ? "form-control is-invalid" : "form-control"
+                }
                 style={styles.inputField}
               />
+              <div className="invalid-feedback">{errors.userName}</div>
             </div>
             <div className="mb-3">
               <input
@@ -88,6 +105,9 @@ function UserSignUpPage() {
             </div>
             {successMessage && (
               <div className="alert alert-success">{successMessage}</div>
+            )}
+            {generalErrors && (
+              <div className="alert alert-danger">{generalErrors}</div>
             )}
             <div className="text-center">
               <button
